@@ -1,7 +1,3 @@
-fn main() {
-    q
-}
-
 pub fn hex_str_to_b64_str(challenge: String) -> String {
     let challenge_hex: Vec<u8> = str_to_hex_vec(challenge);
     hex_vec_to_b64_str(challenge_hex)
