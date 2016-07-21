@@ -1,9 +1,8 @@
 fn main() {
-    let mystr = hex_str_to_b64_str(String::from("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"));
-    println!("{}",mystr);
+    q
 }
 
-fn hex_str_to_b64_str(challenge: String) -> String {
+pub fn hex_str_to_b64_str(challenge: String) -> String {
     let challenge_hex: Vec<u8> = str_to_hex_vec(challenge);
     hex_vec_to_b64_str(challenge_hex)
 }
@@ -59,8 +58,7 @@ fn hex_vec_to_b64_str(v: Vec<u8>) -> String {
                 buffer = buffer << 2;
                 acc = buffer | acc;
                 hex_vec.push(acc);
-                let mut newel = el << 2;
-                newel = newel >> 2;
+                let newel = el & 0x3F;
                 hex_vec.push(newel);
                 buffer = 0;
                 buffer_size = 0;
