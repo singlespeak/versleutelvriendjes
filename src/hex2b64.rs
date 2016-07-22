@@ -67,7 +67,7 @@ fn hex_vec_to_b64_str(v: Vec<u8>) -> String {
         }
     }
     if buffer_size != 0 {
-        buffer = buffer << (8 - buffer_size - 2);
+        buffer = buffer << (6 - buffer_size);
         hex_vec.push(buffer);
     }
 
