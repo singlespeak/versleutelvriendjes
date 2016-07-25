@@ -44,6 +44,9 @@ pub fn score(input: &Vec<u8>) -> i32 {
                 else {
                     was_vowel = true;
                     was_consonant = false;
+                    if consecutive_consonants > max_consecutive_consonants {
+                        max_consecutive_consonants = consecutive_consonants;
+                    }
                     consecutive_consonants = 0;
                 }
             }
@@ -53,6 +56,9 @@ pub fn score(input: &Vec<u8>) -> i32 {
                 } else {
                     was_consonant = true;
                     was_vowel = false;
+                    if consecutive_vowels > max_consecutive_vowels {
+                        max_consecutive_vowels = consecutive_vowels;
+                    }
                     consecutive_vowels = 0;
                 }
             }
@@ -86,8 +92,8 @@ pub fn score(input: &Vec<u8>) -> i32 {
     }
 
     //println!("total: {} - abnormal: {} - number: {} - caps: {} - consvowels: {} - conscons: {}", total_count, abnormal_count,number_count,cap_count,max_consecutive_vowels,max_consecutive_consonants);
-    let mut count_vec: Vec<_> = othermap.iter().collect();
-    count_vec.sort_by(|a, b| b.1.cmp(a.1));
+    //let mut count_vec: Vec<_> = othermap.iter().collect();
+    //count_vec.sort_by(|a, b| b.1.cmp(a.1));
 
     total_count - abnormal_count - (max_consecutive_consonants + 1) - (max_consecutive_vowels + 1)
 }
