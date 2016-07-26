@@ -13,13 +13,14 @@ pub fn pad(input: &Vec<u8>, tpad: &u8) -> Vec<u8> {
 
 pub fn score(input: &Vec<u8>) -> i32 {
     //print_char_vec(input);
-    let map = init_hashmap();
-    let mut othermap = init_hashmap();
+//    let map = init_hashmap();
+//    let mut othermap = init_hashmap();
     let mut cap_count = 0;
     let total_count: i32 = input.len() as i32;
     let mut abnormal_count = 0;
     let mut number_count = 0;
     let vowels: Vec<char> = vec!['a','e','i','o','u','y'];
+    //let punctuation: Vec<char> = vec!['.',',','?','!'];
     let mut was_vowel = false;
     let mut was_consonant = false;
     let mut consecutive_vowels = 0;
@@ -75,19 +76,19 @@ pub fn score(input: &Vec<u8>) -> i32 {
             was_consonant = false;
             was_vowel = false;
         }
-        if el_char.is_uppercase() {
-            lower = *el + 0x20;
-            cap_count += 1;
-        }
-        else {
-            lower = *el;
-        }
-        let lower_char = lower as char;
-        match map.get(&lower_char) {
-            //Some(tt) => println!("{}: {}", *el as char, tt),
-            Some(_) => *othermap.get_mut(&lower_char).unwrap() += 1,
-            None => {}
-        }
+//        if el_char.is_uppercase() {
+//            lower = *el + 0x20;
+//            cap_count += 1;
+//        }
+//        else {
+//            lower = *el;
+//        }
+//        let lower_char = lower as char;
+//        match map.get(&lower_char) {
+//            //Some(tt) => println!("{}: {}", *el as char, tt),
+//            Some(_) => *othermap.get_mut(&lower_char).unwrap() += 1,
+//            None => {}
+//        }
 
     }
 
@@ -120,16 +121,22 @@ pub fn byte_pad(input: String, tpad: char) -> String {
     convertor::to_hex(&ns_padded)
 }
 
-pub fn decrypt(input_string: String) -> String {
+pub fn decrypt(input_string: String, printall: bool) -> (String,char,i32) {
     let hex_vec = convertor::str_to_hex_vec(input_string);
     let mut current_score = 0;
+    let mut xor:char = '0';
     let mut best_fit: Vec<u8> = Vec::with_capacity(hex_vec.len());
     for ch in CHARS.iter() {
         let padded = pad(&hex_vec,ch);
         let sc = score(&padded);
+        if printall {
+            print!("{} - ",sc);
+            print_char_vec(&padded);
+        }
         if sc > current_score {
             best_fit = padded;
             current_score = sc;
+            xor = *ch as char;
         }
     }
     let mut res: String = String::with_capacity(best_fit.len());
@@ -137,7 +144,7 @@ pub fn decrypt(input_string: String) -> String {
         res.push(ch as char);
     }
 
-    res
+    (res,xor,current_score)
 }
 
 
