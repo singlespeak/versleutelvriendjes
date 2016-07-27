@@ -1,115 +1,90 @@
 use hex2b64::convertor;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
+use std::str;
+use std::string::FromUtf8Error;
 
-static CHAR_ARRAY: [char;52] = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
-
-pub fn pad(input: &Vec<u8>, tpad: &u8) -> Vec<u8> {
-    let mut result: Vec<u8> = Vec::with_capacity(input.len());
-    for el in input {
-        result.push(el ^ tpad);
-    }
-    result
-}
+static ALPHABET: [char;26] = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+static ETAOIN: &'static str = "ETAOINSHRDLCUMWFGYPBVKJXQZ";
 
 pub fn score(input: &Vec<u8>) -> i32 {
-    //print_char_vec(input);
-//    let map = init_hashmap();
-//    let mut othermap = init_hashmap();
-    let mut cap_count = 0;
-    let total_count: i32 = input.len() as i32;
-    let mut abnormal_count = 0;
-    let mut number_count = 0;
-    let vowels: Vec<char> = vec!['a','e','i','o','u','y'];
-    //let punctuation: Vec<char> = vec!['.',',','?','!'];
-    let mut was_vowel = false;
-    let mut was_consonant = false;
-    let mut consecutive_vowels = 0;
-    let mut consecutive_consonants = 0;
-    let mut max_consecutive_vowels = 0;
-    let mut max_consecutive_consonants = 0;
-    for el in input.iter() {
-        //let mut tel = *el as char;
-        let lower: u8;
-        let el_char = *el as char;
-        if !el_char.is_alphanumeric() && !el_char.is_whitespace() {
-            abnormal_count += 1;
-        }
-        if el_char.is_numeric() {
-            number_count += 1;
-        }
-        if el_char.is_alphabetic() {
-            if vowels.contains(&el_char) {
-                if was_vowel {
-                    consecutive_vowels += 1;
-                }
-                else {
-                    was_vowel = true;
-                    was_consonant = false;
-                    if consecutive_consonants > max_consecutive_consonants {
-                        max_consecutive_consonants = consecutive_consonants;
-                    }
-                    consecutive_consonants = 0;
-                }
-            }
-            else {
-                if was_consonant {
-                    consecutive_consonants += 1;
-                } else {
-                    was_consonant = true;
-                    was_vowel = false;
-                    if consecutive_vowels > max_consecutive_vowels {
-                        max_consecutive_vowels = consecutive_vowels;
-                    }
-                    consecutive_vowels = 0;
-                }
-            }
-        }
-        else {
-            if consecutive_vowels > max_consecutive_vowels {
-                max_consecutive_vowels = consecutive_vowels;
-            }
-            if consecutive_consonants > max_consecutive_consonants {
-                max_consecutive_consonants = consecutive_consonants;
-            }
-            consecutive_consonants = 0;
-            consecutive_vowels = 0;
-            was_consonant = false;
-            was_vowel = false;
-        }
-//        if el_char.is_uppercase() {
-//            lower = *el + 0x20;
-//            cap_count += 1;
-//        }
-//        else {
-//            lower = *el;
-//        }
-//        let lower_char = lower as char;
-//        match map.get(&lower_char) {
-//            //Some(tt) => println!("{}: {}", *el as char, tt),
-//            Some(_) => *othermap.get_mut(&lower_char).unwrap() += 1,
-//            None => {}
-//        }
+    match get_char_freq(input) {
+        Ok(s)   => {
+            let mut score = 0;
+            let good = &ETAOIN[0..6];
+            let bad = &ETAOIN[(ETAOIN.len()-6)..];
+            let mut chunk = &s[0..6];
 
+            for ch in chunk.chars() {
+                if good.contains(ch) {
+                    score += 1;
+                }
+            }
+            chunk = &s[(s.len()-6)..];
+
+            for ch in chunk.chars() {
+                if bad.contains(ch) {
+                    score += 1;
+                }
+            }
+            score
+        },
+        Err(_)  => 0
     }
+}
 
-    //println!("total: {} - abnormal: {} - number: {} - caps: {} - consvowels: {} - conscons: {}", total_count, abnormal_count,number_count,cap_count,max_consecutive_vowels,max_consecutive_consonants);
-    //let mut count_vec: Vec<_> = othermap.iter().collect();
-    //count_vec.sort_by(|a, b| b.1.cmp(a.1));
+fn get_char_freq(v: &Vec<u8>) -> Result<String, FromUtf8Error> {
+    let mut map = init_char_freq_map();
+    let input = v.clone();
+    //print_char_vec(&input);
+    match String::from_utf8(input) {
+        Ok(s) => {
+            for ch in s.chars() {
+                let upper = ch.to_uppercase().next().unwrap();
+                if let Some(x) = map.get_mut(&upper) {
+                    *x += 1;
+                }
+            }
 
-    total_count - abnormal_count - (max_consecutive_consonants + 1) - (max_consecutive_vowels + 1)
+            let mut map_flip = init_count_map(&map);
+
+            for ochar in ETAOIN.chars().rev() {
+                let ee = map.get(&ochar).unwrap();
+                if let Some(x) = map_flip.get_mut(ee) {
+                    x.push(ochar);
+                }
+            }
+
+            let mut res = String::new();
+
+            let ctr = map_flip.len();
+            for i in (0..ctr).rev() {
+                res.push_str(map_flip.values().nth(i).unwrap());
+            }
+            Ok(res)
+        },
+        Err(e)    => Err(e)
+    }
 }
 
 pub fn print_char_vec(v: &Vec<u8>) {
-    for ch in v {
-        print!("{}", *ch as char);
+    let vv = v.clone();
+    match String::from_utf8(vv) {
+        Ok(s) => println!("{}", s),
+        Err(e)    => println!("Not UTF-8: {:?}",e)
     }
-    println!("");
 }
 
-fn init_hashmap() -> HashMap<char, isize> {
-    let mut map = HashMap::new();
-    for ch in CHAR_ARRAY.iter() {
+fn init_char_freq_map() -> BTreeMap<char, isize> {
+    let mut map = BTreeMap::new();
+    for ch in ALPHABET.iter() {
         map.insert(*ch,0 as isize);
+    }
+    map
+}
+fn init_count_map(source: &BTreeMap<char, isize>) -> BTreeMap<isize, String> {
+    let mut map = BTreeMap::new();
+    for (_, count) in source {
+        map.entry(*count).or_insert(String::new());
     }
     map
 }
@@ -121,97 +96,34 @@ pub fn byte_pad(input: String, tpad: char) -> String {
     convertor::to_hex(&ns_padded)
 }
 
+pub fn pad(input: &Vec<u8>, tpad: &u8) -> Vec<u8> {
+    let mut result: Vec<u8> = Vec::with_capacity(input.len());
+    for el in input {
+        result.push(el ^ tpad);
+    }
+    result
+}
+
 pub fn decrypt(input_string: String, printall: bool) -> (String,char,i32) {
     let hex_vec = convertor::str_to_hex_vec(input_string);
     let mut current_score = 0;
     let mut xor:char = '0';
     let mut best_fit: Vec<u8> = Vec::with_capacity(hex_vec.len());
-    for ch in CHARS.iter() {
-        let padded = pad(&hex_vec,ch);
+    for b in 0..255 {
+        let ch = b as u8;
+        let padded = pad(&hex_vec,&ch);
         let sc = score(&padded);
         if printall {
-            print!("{} - ",sc);
+            print!("{} - ",ch as char);
             print_char_vec(&padded);
         }
         if sc > current_score {
             best_fit = padded;
             current_score = sc;
-            xor = *ch as char;
+            xor = ch as char;
         }
     }
-    let mut res: String = String::with_capacity(best_fit.len());
-    for ch in best_fit {
-        res.push(ch as char);
-    }
 
-    (res,xor,current_score)
+    let tres = String::from_utf8(best_fit).unwrap();
+    (tres,xor,current_score)
 }
-
-
-
-const CHARS: [u8; 64] = [
-    'A' as u8,
-    'B' as u8,
-    'C' as u8,
-    'D' as u8,
-    'E' as u8,
-    'F' as u8,
-    'G' as u8,
-    'H' as u8,
-    'I' as u8,
-    'J' as u8,
-    'K' as u8,
-    'L' as u8,
-    'M' as u8,
-    'N' as u8,
-    'O' as u8,
-    'P' as u8,
-    'Q' as u8,
-    'R' as u8,
-    'S' as u8,
-    'T' as u8,
-    'U' as u8,
-    'V' as u8,
-    'W' as u8,
-    'X' as u8,
-    'Y' as u8,
-    'Z' as u8,
-    'a' as u8,
-    'b' as u8,
-    'c' as u8,
-    'd' as u8,
-    'e' as u8,
-    'f' as u8,
-    'g' as u8,
-    'h' as u8,
-    'i' as u8,
-    'j' as u8,
-    'k' as u8,
-    'l' as u8,
-    'm' as u8,
-    'n' as u8,
-    'o' as u8,
-    'p' as u8,
-    'q' as u8,
-    'r' as u8,
-    's' as u8,
-    't' as u8,
-    'u' as u8,
-    'v' as u8,
-    'w' as u8,
-    'x' as u8,
-    'y' as u8,
-    'z' as u8,
-    '0' as u8,
-    '1' as u8,
-    '2' as u8,
-    '3' as u8,
-    '4' as u8,
-    '5' as u8,
-    '6' as u8,
-    '7' as u8,
-    '8' as u8,
-    '9' as u8,
-    '+' as u8,
-    '/' as u8,
-];
