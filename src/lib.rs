@@ -1,2 +1,4 @@
-pub mod hex2b64;
-pub mod exc2;
+pub mod base64;
+pub mod hex;
+pub mod xor;
+pub mod freq_analysis;

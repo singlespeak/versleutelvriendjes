@@ -1,14 +1,41 @@
 extern crate versleutelvriendjes;
 
+use std::time::Instant;
+use std::io::BufReader;
+use std::io::BufRead;
+use std::fs::File;
+use std::str;
+
 fn main() {
+//    let input = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal";
+//    let xord = versleutelvriendjes::xor::xor_multibyte(input,"ICE");
+//    let xord_v = versleutelvriendjes::hex::to_hex_string(&xord);
+//    print!("{}",xord_v);
+
+    let f = File::open("/home/vincent/dev/rust/projects/versleutelvriendjes/data/4.txt").unwrap();
+    let mut reader = BufReader::new(f);
+    let mut buffer = String::new();
+
+    let mut best_score = 0;
+    let mut best_fit: String = String::new();
+    let mut x: char = '0';
+    for line in reader.lines() {
+        let hex = line.unwrap();
+        // work with buffer
+
+        let encrypted = versleutelvriendjes::hex::str_to_hex_vec(&hex);
 
 
-    // encrypt:
-    //let input = String::from("een twee drie hoedje van papier");
-    //let encrypted = versleutelvriendjes::exc2::byte_pad(input,'X');
 
-    // decrypt:
-    let encrypted = String::from("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
-    let (decrypted,xor,score) = versleutelvriendjes::exc2::decrypt(encrypted,false);
-    println!("{} - {} - {}",decrypted,xor,score);
+        if let Ok((res,ch,tscore)) = versleutelvriendjes::xor::decrypt_xor_single_byte(&encrypted,false,versleutelvriendjes::freq_analysis::score) {
+            if tscore > best_score {
+                best_fit = res;
+                best_score = tscore;
+                x = ch;
+            }
+            buffer.clear();
+        }
+    }
+
+    println!("fit: {} - score: {} - char: {:?}", best_fit, best_score,x);
 }
